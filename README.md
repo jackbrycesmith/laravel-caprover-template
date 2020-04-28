@@ -31,5 +31,5 @@
 ## Usage
 
 1. [Install Laravel](https://laravel.com/docs/7.x/installation#installing-laravel), e.g. `laravel new -f .`
-2. <a href="https://jack.bryce-smith.com/💡/laravel-docker-caprover#using-the-template"><i>jack.bryce-smith.com/💡/</i>laravel-docker-caprover<strong>#using-the-template</strong></a>
+2. <a href="https://jack.bryce-smith.com/💡/laravel-docker-caprover"><i>jack.bryce-smith.com/💡/</i>laravel-docker-caprover</a>
 3. [Deploy to CapRover](https://caprover.com/docs/deployment-methods.html), e.g. `caprover deploy`
