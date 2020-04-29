@@ -2,6 +2,7 @@
     root * /srv/app/public
     php_fastcgi 127.0.0.1:9000
     encode gzip
+    header -X-Powered-By
     file_server
     log
 }
