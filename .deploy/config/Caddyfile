@@ -1,5 +1,13 @@
 :80 {
     root * /srv/app/public
+
+    redir /index.php / 308
+    redir /index.php/ / 308
+    route /index.php/* {
+        uri strip_prefix /index.php
+        redir {path} 308
+    }
+
     php_fastcgi 127.0.0.1:9000
     encode gzip
     header -X-Powered-By
