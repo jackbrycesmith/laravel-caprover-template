@@ -1,11 +1,11 @@
 :80 {
     root * /srv/app/public
 
-    # @websockets {
-    #     header Connection *upgrade*
-    #     header Upgrade    websocket
-    # }
-    # reverse_proxy @websockets 127.0.0.1:6001
+    @websockets {
+        header Connection *upgrade*
+        header Upgrade    websocket
+    }
+    reverse_proxy @websockets 127.0.0.1:6001
 
     redir /index.php / 308
     redir /index.php/ / 308
