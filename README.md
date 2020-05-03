@@ -26,6 +26,7 @@
 - 📦 [Installs composer dependencies](https://github.com/jackbrycesmith/laravel-caprover-template/blob/master/.deploy/Dockerfile#L30); cached between builds if no changes
 - ⚡️ Served via [Caddy 2](https://github.com/caddyserver/caddy)
 - ⏰ [Setup to call](https://github.com/jackbrycesmith/laravel-caprover-template/blob/master/.deploy/Dockerfile#L11) the [Laravel command scheduler](https://laravel.com/docs/7.x/scheduling)
+- 🛰 Simple websockets support
 - 💪 [Services will restart](https://github.com/jackbrycesmith/laravel-caprover-template/blob/master/.deploy/config/supervisor.conf) thanks to [supervisord](https://github.com/ochinchina/supervisord)
 
 ## Usage
