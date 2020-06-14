@@ -1,38 +1,44 @@
-FROM php:7.4-fpm
+ARG PHP_VERSION=7.4
+FROM php:${PHP_VERSION}-fpm-alpine
+
+# Install system dependencies
+RUN apk add --no-cache dcron busybox-suid libcap curl zip unzip git
+
+# Install supervisord implementation
+COPY --from=ochinchina/supervisord:latest /usr/local/bin/supervisord /usr/local/bin/supervisord
+
+# Install caddy
+COPY --from=caddy:2.0.0 /usr/bin/caddy /usr/local/bin/caddy
+RUN setcap 'CAP_NET_BIND_SERVICE=+ep' /usr/local/bin/caddy
+
+# Install PHP extensions
+COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/bin/
+RUN install-php-extensions intl bcmath gd pdo_mysql pdo_pgsql opcache redis uuid exif pcntl zip
+
+# Install composer
+COPY --from=composer:1.10.5 /usr/bin/composer /usr/local/bin/composer
 
 # Set working directory
 ENV LARAVEL_PATH=/srv/app
 WORKDIR $LARAVEL_PATH
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y build-essential cron curl locales zip unzip git
+# Set cron job
+RUN echo "* * * * * /usr/local/bin/php /srv/app/artisan schedule:run >> /dev/null 2>&1" | install -D /dev/stdin /home/www-data/crontabs/www-data \
+    && chown -R www-data:www-data /home/www-data/crontabs/www-data \
+    && chown www-data:www-data /usr/sbin/crond && setcap cap_setgid=ep /usr/sbin/crond
 
-# Setup cron job
-RUN (crontab -l ; echo "* * * * * /usr/local/bin/php /srv/app/artisan schedule:run >> /dev/null 2>&1") | crontab
-
-# Install supervisord
-COPY --from=ochinchina/supervisord:latest /usr/local/bin/supervisord /usr/local/bin/supervisord
-
-# Install caddy
-COPY --from=caddy:2.0.0 /usr/bin/caddy /usr/local/bin/caddy
-
-# Install PHP extensions
-COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/bin/
-RUN install-php-extensions intl bcmath gd pdo_mysql pdo_pgsql opcache redis uuid exif pcntl zip
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Install composer & app dependencies
-COPY --from=composer:1.10.5 /usr/bin/composer /usr/local/bin/composer
-COPY composer.json composer.json
-COPY composer.lock composer.lock
+# Install app dependencies
+COPY composer.json composer.lock ./
+RUN chown -R www-data:www-data $LARAVEL_PATH
+USER www-data
 # TODO remove prestissimo when composer hits v2
 RUN composer global require hirak/prestissimo --no-plugins --no-scripts
-RUN composer install --prefer-dist --no-scripts --no-dev --no-autoloader && rm -rf /root/.composer
+RUN composer install --prefer-dist --no-scripts --no-dev --no-autoloader
+RUN rm -rf /home/www-data/.composer
 
 # Copy app
 COPY --chown=www-data:www-data . $LARAVEL_PATH/
 COPY ./.deploy/config/php/local.ini /usr/local/etc/php/conf.d/local.ini
-RUN chmod -R 775 $LARAVEL_PATH/storage
 
 # Set any ENVs
 ARG APP_KEY=${APP_KEY}
@@ -78,6 +84,5 @@ ARG PUSHER_APP_CLUSTER=${PUSHER_APP_CLUSTER}
 # Start app
 EXPOSE 80
 COPY ./.deploy/entrypoint.sh /
-RUN chmod +x /entrypoint.sh
 
-ENTRYPOINT ["/bin/bash", "/entrypoint.sh"]
+ENTRYPOINT ["sh", "/entrypoint.sh"]
