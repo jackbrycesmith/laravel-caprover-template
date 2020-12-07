@@ -31,6 +31,8 @@
 
 ## Usage
 
-1. [Install Laravel](https://laravel.com/docs/7.x/installation#installing-laravel), e.g. `laravel new -f .`
+1. [Install Laravel](https://laravel.com/docs/installation)
+  > *e.g. Zsh one-liner with the [Laravel Installer](https://github.com/laravel/installer):*
+  > <pre><code>laravel new my-app --prompt-jetstream && mv my-app/*(DN) ./ && rm -rf my-app</code></pre>
 2. <a href="https://jack.bryce-smith.com/💡/laravel-docker-caprover"><i>jack.bryce-smith.com/💡/</i>laravel-docker-caprover</a>
 3. [Deploy to CapRover](https://caprover.com/docs/deployment-methods.html), e.g. `caprover deploy`
