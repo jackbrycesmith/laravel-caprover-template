@@ -12,8 +12,8 @@ RUN install-php-extensions intl bcmath gd pdo_mysql pdo_pgsql opcache redis uuid
 COPY --from=ochinchina/supervisord:latest /usr/local/bin/supervisord /usr/local/bin/supervisord
 
 # Install caddy
-COPY --from=caddy:2.0.0 /usr/bin/caddy /usr/local/bin/caddy
-RUN setcap 'CAP_NET_BIND_SERVICE=+ep' /usr/local/bin/caddy
+COPY --from=caddy:2.2.1 /usr/bin/caddy /usr/local/bin/caddy
+RUN setcap 'cap_net_bind_service=+ep' /usr/local/bin/caddy
 
 # Install composer
 COPY --from=composer:1.10.5 /usr/bin/composer /usr/local/bin/composer
