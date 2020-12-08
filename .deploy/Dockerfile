@@ -16,7 +16,7 @@ COPY --from=caddy:2.2.1 /usr/bin/caddy /usr/local/bin/caddy
 RUN setcap 'cap_net_bind_service=+ep' /usr/local/bin/caddy
 
 # Install composer
-COPY --from=composer:1.10.5 /usr/bin/composer /usr/local/bin/composer
+COPY --from=composer/composer:2 /usr/bin/composer /usr/local/bin/composer
 
 FROM php-system-setup AS app-setup
 
@@ -36,8 +36,6 @@ RUN echo "* * * * * /usr/local/bin/php /srv/app/artisan schedule:run >> /dev/nul
 
 # Switch to non-root 'app' user & install app dependencies
 COPY composer.json composer.lock ./
-# TODO remove prestissimo when composer hits v2
-RUN composer global require hirak/prestissimo --no-plugins --no-scripts
 RUN chown -R $NON_ROOT_USER:$NON_ROOT_GROUP $LARAVEL_PATH
 USER $NON_ROOT_USER
 RUN composer install --prefer-dist --no-scripts --no-dev --no-autoloader
