@@ -1,8 +1,12 @@
 ARG PHP_VERSION=7.4
-FROM php:${PHP_VERSION}-fpm-alpine
+FROM php:${PHP_VERSION}-fpm-alpine AS php-system-setup
 
 # Install system dependencies
 RUN apk add --no-cache dcron busybox-suid libcap curl zip unzip git
+
+# Install PHP extensions
+COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/bin/
+RUN install-php-extensions intl bcmath gd pdo_mysql pdo_pgsql opcache redis uuid exif pcntl zip
 
 # Install supervisord implementation
 COPY --from=ochinchina/supervisord:latest /usr/local/bin/supervisord /usr/local/bin/supervisord
@@ -11,33 +15,36 @@ COPY --from=ochinchina/supervisord:latest /usr/local/bin/supervisord /usr/local/
 COPY --from=caddy:2.0.0 /usr/bin/caddy /usr/local/bin/caddy
 RUN setcap 'CAP_NET_BIND_SERVICE=+ep' /usr/local/bin/caddy
 
-# Install PHP extensions
-COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/bin/
-RUN install-php-extensions intl bcmath gd pdo_mysql pdo_pgsql opcache redis uuid exif pcntl zip
-
 # Install composer
 COPY --from=composer:1.10.5 /usr/bin/composer /usr/local/bin/composer
+
+FROM php-system-setup AS app-setup
 
 # Set working directory
 ENV LARAVEL_PATH=/srv/app
 WORKDIR $LARAVEL_PATH
 
-# Set cron job
-RUN echo "* * * * * /usr/local/bin/php /srv/app/artisan schedule:run >> /dev/null 2>&1" | install -D /dev/stdin /home/www-data/crontabs/www-data \
-    && chown -R www-data:www-data /home/www-data/crontabs/www-data \
-    && chown www-data:www-data /usr/sbin/crond && setcap cap_setgid=ep /usr/sbin/crond
+# Add non-root user: 'app'
+ARG NON_ROOT_GROUP=${NON_ROOT_GROUP:-app}
+ARG NON_ROOT_USER=${NON_ROOT_USER:-app}
+RUN addgroup -S $NON_ROOT_GROUP && adduser -S $NON_ROOT_USER -G $NON_ROOT_GROUP
 
-# Install app dependencies
+# Set cron job
+RUN echo "* * * * * /usr/local/bin/php /srv/app/artisan schedule:run >> /dev/null 2>&1" | install -D /dev/stdin /home/$NON_ROOT_USER/crontabs/$NON_ROOT_USER \
+    && chown -R $NON_ROOT_USER:$NON_ROOT_GROUP /home/$NON_ROOT_USER/crontabs/$NON_ROOT_USER \
+    && chown $NON_ROOT_USER:$NON_ROOT_GROUP /usr/sbin/crond && setcap cap_setgid=ep /usr/sbin/crond
+
+# Switch to non-root 'app' user & install app dependencies
 COPY composer.json composer.lock ./
-RUN chown -R www-data:www-data $LARAVEL_PATH
-USER www-data
 # TODO remove prestissimo when composer hits v2
 RUN composer global require hirak/prestissimo --no-plugins --no-scripts
+RUN chown -R $NON_ROOT_USER:$NON_ROOT_GROUP $LARAVEL_PATH
+USER $NON_ROOT_USER
 RUN composer install --prefer-dist --no-scripts --no-dev --no-autoloader
-RUN rm -rf /home/www-data/.composer
+RUN rm -rf /home/$NON_ROOT_USER/.composer
 
 # Copy app
-COPY --chown=www-data:www-data . $LARAVEL_PATH/
+COPY --chown=$NON_ROOT_USER:$NON_ROOT_GROUP . $LARAVEL_PATH/
 COPY ./.deploy/config/php/local.ini /usr/local/etc/php/conf.d/local.ini
 
 # Set any ENVs
