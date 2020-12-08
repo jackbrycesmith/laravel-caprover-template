@@ -5,7 +5,9 @@
         header Connection *upgrade*
         header Upgrade    websocket
     }
-    reverse_proxy @websockets 127.0.0.1:6001
+    reverse_proxy @websockets 127.0.0.1:6001 {
+        header_down -X-Powered-By
+    }
 
     redir /index.php / 308
     redir /index.php/ / 308
