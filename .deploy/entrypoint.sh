@@ -1,12 +1,12 @@
 #!/bin/sh
 
-echo "🎬 entrypoint.sh"
+echo "🎬 entrypoint.sh: [$(whoami)]"
 
 composer dump-autoload --no-interaction --no-dev --optimize
 
 echo "🎬 artisan commands"
 
-php artisan cache:clear
+# 💡 Group into a custom command e.g. php artisan app:on-deploy
 php artisan migrate --no-interaction --force
 
 echo "🎬 start supervisord"
